@@ -10,10 +10,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: DB_PATH
-        value: /var/data/money-book.db
+        value: /opt/render/project/src/data/money-book.db
       - key: JWT_SECRET
         generateValue: true
-    disk:
-      name: money-book-data
-      mountPath: /var/data
-      sizeGB: 1

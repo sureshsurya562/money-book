@@ -324,191 +324,323 @@ export default function AllocationChart({
   }
 
   const activeHint = TABS.find((t) => t.id === tab)?.hint;
+  const mobileTopTypes = typeBars.slice(0, 6);
+  const mobileTypeTotal = mobileTopTypes.reduce((s, t) => s + t.value, 0) || 1;
 
   return (
     <div className="money-map">
-      <div className="viz-tabs" role="tablist" aria-label="Money views">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`viz-tab ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <p className="viz-hint">{activeHint}</p>
+      {/* Desktop: full chart tabs */}
+      <div className="desktop-viz">
+        <div className="viz-tabs" role="tablist" aria-label="Money views">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`viz-tab ${tab === t.id ? 'active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <p className="viz-hint">{activeHint}</p>
 
-      {tab === 'stacked' && (
-        <div className="viz-panel">
-          <div className="viz-chart">
-            <ResponsiveContainer width="100%" height={340}>
-              <BarChart
-                data={stackedRows}
-                margin={{ top: 8, right: 8, left: 0, bottom: 48 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(20,32,31,0.08)" />
-                <XAxis
-                  dataKey="name"
-                  interval={0}
-                  tick={<PillarAxisTick />}
-                  axisLine={false}
-                  tickLine={false}
-                  height={56}
-                />
-                <YAxis
-                  tickFormatter={(v) => formatINR(Number(v), true).replace('₹', '')}
-                  tick={{ fill: '#6b7a78', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={52}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(20,32,31,0.04)' }}
-                  content={<StackTooltip stackNames={stackNames} />}
-                />
-                {stackKeys.map((key) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    stackId="money"
-                    fill={stackColors[key]}
-                    maxBarSize={72}
+        {tab === 'stacked' && (
+          <div className="viz-panel">
+            <div className="viz-chart">
+              <ResponsiveContainer width="100%" height={340}>
+                <BarChart
+                  data={stackedRows}
+                  margin={{ top: 8, right: 8, left: 0, bottom: 48 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(20,32,31,0.08)" />
+                  <XAxis
+                    dataKey="name"
+                    interval={0}
+                    tick={<PillarAxisTick />}
+                    axisLine={false}
+                    tickLine={false}
+                    height={56}
+                  />
+                  <YAxis
+                    tickFormatter={(v) => formatINR(Number(v), true).replace('₹', '')}
+                    tick={{ fill: '#6b7a78', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={52}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(20,32,31,0.04)' }}
+                    content={<StackTooltip stackNames={stackNames} />}
+                  />
+                  {stackKeys.map((key) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      stackId="money"
+                      fill={stackColors[key]}
+                      maxBarSize={72}
+                      cursor="pointer"
+                      onClick={(data) => {
+                        const payload = (data as { payload?: { pillarId?: string }; pillarId?: string })
+                          ?.payload;
+                        const pillarId = payload?.pillarId ?? (data as { pillarId?: string })?.pillarId;
+                        if (pillarId) onSelectPillar?.(pillarId);
+                      }}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="viz-legend">
+              {stackKeys.map((key) => (
+                <span key={key} className="badge">
+                  <span className="dot" style={{ background: stackColors[key] }} />
+                  {stackNames[key]}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'pie' && (
+          <div className="viz-panel viz-pie-row">
+            <div className="viz-chart" style={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={2}
+                    stroke="none"
                     cursor="pointer"
-                    onClick={(data) => {
-                      const payload = (data as { payload?: { pillarId?: string }; pillarId?: string })
-                        ?.payload;
-                      const pillarId = payload?.pillarId ?? (data as { pillarId?: string })?.pillarId;
-                      if (pillarId) onSelectPillar?.(pillarId);
+                    onClick={(_, index) => {
+                      const entry = pieData[index];
+                      if (entry) onSelectPillar?.(entry.id);
+                    }}
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.id} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="pie-side-list">
+              {pieData.map((p) => {
+                const displayPct = chartTotal > 0 ? (p.value / chartTotal) * 100 : 0;
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    className="pie-side-item clickable"
+                    onClick={() => onSelectPillar?.(p.id)}
+                  >
+                    <span className="dot" style={{ background: p.color }} />
+                    <div>
+                      <strong>{p.name}</strong>
+                      <p>
+                        {formatINR(p.value, true)}
+                        {p.isCover ? ' cover' : ''} · {displayPct.toFixed(0)}%
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === 'types' && (
+          <div className="viz-panel">
+            <div className="viz-chart">
+              <ResponsiveContainer width="100%" height={Math.max(280, typeBars.length * 36)}>
+                <BarChart
+                  data={typeBars}
+                  layout="vertical"
+                  margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(20,32,31,0.08)" />
+                  <XAxis
+                    type="number"
+                    tickFormatter={(v) => formatINR(Number(v), true).replace('₹', '')}
+                    tick={{ fill: '#6b7a78', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="shortName"
+                    width={78}
+                    tick={{ fill: '#3d4f4d', fontSize: 12, fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={tipStyle()}
+                    formatter={(value) => [formatINR(Number(value), true), 'Amount']}
+                    labelFormatter={(_, payload) => {
+                      const row = payload?.[0]?.payload;
+                      if (!row) return '';
+                      return `${row.name} · ${row.pillarName}`;
                     }}
                   />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+                  <Bar
+                    dataKey="value"
+                    radius={[0, 8, 8, 0]}
+                    maxBarSize={22}
+                    cursor="pointer"
+                    onClick={(data) => {
+                      const payload = (
+                        data as {
+                          payload?: { key?: string; pillarId?: string };
+                          key?: string;
+                          pillarId?: string;
+                        }
+                      )?.payload;
+                      const row = payload ?? (data as { key?: string; pillarId?: string });
+                      if (row?.pillarId && row?.key) onSelectCategory?.(row.pillarId, row.key);
+                    }}
+                  >
+                    {typeBars.map((entry) => (
+                      <Cell key={entry.key} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="viz-legend">
-            {stackKeys.map((key) => (
-              <span key={key} className="badge">
-                <span className="dot" style={{ background: stackColors[key] }} />
-                {stackNames[key]}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {tab === 'pie' && (
-        <div className="viz-panel viz-pie-row">
-          <div className="viz-chart" style={{ height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={2}
-                  stroke="none"
-                  cursor="pointer"
-                  onClick={(_, index) => {
-                    const entry = pieData[index];
-                    if (entry) onSelectPillar?.(entry.id);
-                  }}
-                >
-                  {pieData.map((entry) => (
-                    <Cell key={entry.id} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<PieTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="pie-side-list">
-            {pieData.map((p) => {
-              const displayPct = chartTotal > 0 ? (p.value / chartTotal) * 100 : 0;
-              return (
-                <button
-                  type="button"
-                  key={p.id}
-                  className="pie-side-item clickable"
-                  onClick={() => onSelectPillar?.(p.id)}
-                >
-                  <span className="dot" style={{ background: p.color }} />
-                  <div>
-                    <strong>{p.name}</strong>
-                    <p>
+      {/* Mobile: compact pie + top types + pillar strip */}
+      <div className="mobile-viz">
+        <div className="mobile-viz-tabs" role="tablist" aria-label="Mobile money views">
+          <button
+            type="button"
+            className={`viz-tab ${tab === 'pie' || tab === 'stacked' ? 'active' : ''}`}
+            onClick={() => setTab('pie')}
+          >
+            Pillars
+          </button>
+          <button
+            type="button"
+            className={`viz-tab ${tab === 'types' ? 'active' : ''}`}
+            onClick={() => setTab('types')}
+          >
+            Top types
+          </button>
+        </div>
+
+        {(tab === 'pie' || tab === 'stacked') && (
+          <div className="mobile-viz-card">
+            <div className="mobile-pie-wrap">
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={52}
+                    outerRadius={82}
+                    paddingAngle={2}
+                    stroke="none"
+                    cursor="pointer"
+                    onClick={(_, index) => {
+                      const entry = pieData[index];
+                      if (entry) onSelectPillar?.(entry.id);
+                    }}
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.id} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mobile-pie-legend">
+              {pieData.map((p) => {
+                const displayPct = chartTotal > 0 ? (p.value / chartTotal) * 100 : 0;
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    className="mobile-legend-row"
+                    onClick={() => onSelectPillar?.(p.id)}
+                  >
+                    <span className="dot" style={{ background: p.color }} />
+                    <span className="mobile-legend-name">{p.name}</span>
+                    <strong>
                       {formatINR(p.value, true)}
-                      {p.isCover ? ' cover' : ''} · {displayPct.toFixed(0)}%
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+                      <em>{displayPct.toFixed(0)}%</em>
+                    </strong>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mobile-viz-note">Tap a slice or name to open that pillar</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {tab === 'types' && (
-        <div className="viz-panel">
-          <div className="viz-chart">
-            <ResponsiveContainer width="100%" height={Math.max(280, typeBars.length * 36)}>
-              <BarChart
-                data={typeBars}
-                layout="vertical"
-                margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(20,32,31,0.08)" />
-                <XAxis
-                  type="number"
-                  tickFormatter={(v) => formatINR(Number(v), true).replace('₹', '')}
-                  tick={{ fill: '#6b7a78', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="shortName"
-                  width={78}
-                  tick={{ fill: '#3d4f4d', fontSize: 12, fontWeight: 600 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={tipStyle()}
-                  formatter={(value) => [formatINR(Number(value), true), 'Amount']}
-                  labelFormatter={(_, payload) => {
-                    const row = payload?.[0]?.payload;
-                    if (!row) return '';
-                    return `${row.name} · ${row.pillarName}`;
-                  }}
-                />
-                <Bar
-                  dataKey="value"
-                  radius={[0, 8, 8, 0]}
-                  maxBarSize={22}
-                  cursor="pointer"
-                  onClick={(data) => {
-                    const payload = (
-                      data as { payload?: { key?: string; pillarId?: string }; key?: string; pillarId?: string }
-                    )?.payload;
-                    const row = payload ?? (data as { key?: string; pillarId?: string });
-                    if (row?.pillarId && row?.key) onSelectCategory?.(row.pillarId, row.key);
-                  }}
-                >
-                  {typeBars.map((entry) => (
-                    <Cell key={entry.key} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+        {tab === 'types' && (
+          <div className="mobile-viz-card">
+            <p className="mobile-viz-note" style={{ marginTop: 0 }}>
+              Biggest money types — tap to filter below
+            </p>
+            <div className="mobile-type-list">
+              {mobileTopTypes.map((t) => {
+                const width = Math.max(10, (t.value / mobileTypeTotal) * 100);
+                return (
+                  <button
+                    type="button"
+                    key={t.key}
+                    className="mobile-type-row"
+                    onClick={() => onSelectCategory?.(t.pillarId, t.key)}
+                  >
+                    <div className="mobile-type-top">
+                      <span>{t.shortName}</span>
+                      <strong>{formatINR(t.value, true)}</strong>
+                    </div>
+                    <div className="mobile-type-track">
+                      <div
+                        className="mobile-type-fill"
+                        style={{ width: `${width}%`, background: t.color }}
+                      />
+                    </div>
+                    <em>{t.pillarName}</em>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        <div className="mobile-pillar-strip">
+          {pieData.map((p) => {
+            const pct = chartTotal > 0 ? (p.value / chartTotal) * 100 : 0;
+            return (
+              <button
+                type="button"
+                key={p.id}
+                className="mobile-pillar-chip"
+                style={{ '--pillar': p.color } as CSSProperties}
+                onClick={() => onSelectPillar?.(p.id)}
+              >
+                <span className="dot" style={{ background: p.color }} />
+                <strong>{p.name.split(' ')[0]}</strong>
+                <em>{pct.toFixed(0)}%</em>
+              </button>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       <div className="pillar-glance-grid">
         {pillars.map((pillar) => {

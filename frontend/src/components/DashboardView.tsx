@@ -163,7 +163,7 @@ export default function DashboardView({
               Click a pillar or type (e.g. MFs) to jump below and see only those items.
             </p>
             <p className="hint hint-mobile">
-              Tap a pillar or type below to jump to those items.
+              Charts below are phone-friendly — tap pie slices or top types to jump to details.
             </p>
           </div>
         </div>
