@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.js";
 import holdingsRoutes from "./routes/holdings.js";
 import shareRoutes from "./routes/share.js";
 import accessRequestRoutes from "./routes/accessRequests.js";
+import adminRoutes from "./routes/admin.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/holdings", holdingsRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/access-requests", accessRequestRoutes);
+app.use("/api/admin", adminRoutes);
 
 if (isProd) {
   app.use(express.static(frontendDist, { maxAge: "1h", index: false }));
