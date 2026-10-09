@@ -156,6 +156,24 @@ export const CATEGORIES = [
     ],
     platforms: ["Groww", "Zerodha Coin", "Bank apps"],
   },
+  // Legacy alias used by some older rows — keep mapped to emergency so totals stay correct
+  {
+    id: "liquid_savings",
+    pillarId: "emergency",
+    name: "Liquid / Savings",
+    shortName: "Liquid+",
+    color: "#0F766E",
+    icon: "wallet",
+    description:
+      "Cash-like money in liquid funds or savings that sits in your emergency layer.",
+    whyUseful: "Keeps emergency money easy to reach while still organised under safety.",
+    benefits: [
+      "Part of your emergency fund",
+      "Quick access when needed",
+      "Safer than equity for near-term needs",
+    ],
+    platforms: ["Groww", "Bank apps"],
+  },
 
   // —— 2. Long-term / risk investments ——
   {
