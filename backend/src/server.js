@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import "./db.js";
+import { bootstrapFromEnv } from "./restorePortfolio.js";
 import authRoutes from "./routes/auth.js";
 import holdingsRoutes from "./routes/holdings.js";
 import shareRoutes from "./routes/share.js";
@@ -23,13 +24,16 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// Refill portfolio after free-tier cold starts / ephemeral disk wipes
+bootstrapFromEnv();
+
 app.use(
   cors({
     origin: true,
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "money-book-api" });
