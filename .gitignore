@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# build
+frontend/dist/
+dist/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# databases
+*.db
+*.db-*
+backend/data/
+**/data/*.db
+**/data/*.db-*
+
+# OS / editor
+.DS_Store
+*.local
+.vscode/
+.idea/
+
+# logs
+*.log
+npm-debug.log*
