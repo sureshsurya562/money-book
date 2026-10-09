@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: money-book
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /var/data/money-book.db
+      - key: JWT_SECRET
+        generateValue: true
+    disk:
+      name: money-book-data
+      mountPath: /var/data
+      sizeGB: 1
