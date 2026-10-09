@@ -9,10 +9,8 @@ WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./backend/
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 
-# Frontend lockfile is generated on macOS; install the Linux Rolldown binding explicitly.
 RUN npm ci --prefix backend \
-  && npm ci --prefix frontend \
-  && npm install --prefix frontend --no-save @rolldown/binding-linux-x64-gnu@1.2.13
+  && npm ci --prefix frontend
 
 COPY . .
 
