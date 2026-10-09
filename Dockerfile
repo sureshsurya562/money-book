@@ -6,12 +6,10 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
 COPY backend/package.json backend/package-lock.json ./backend/
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 
-RUN npm ci \
-  && npm ci --prefix backend \
+RUN npm ci --prefix backend \
   && npm ci --prefix frontend
 
 COPY . .
