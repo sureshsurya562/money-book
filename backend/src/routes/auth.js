@@ -8,10 +8,18 @@ import { SEED_HOLDINGS } from "../seedData.js";
 
 const router = Router();
 
+function jwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not configured");
+  }
+  return secret;
+}
+
 function signToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name },
-    process.env.JWT_SECRET,
+    jwtSecret(),
     { expiresIn: "30d" }
   );
 }
@@ -100,18 +108,23 @@ router.post("/register", (req, res) => {
 });
 
 router.post("/login", (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
 
-  const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase());
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
+    const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase());
+    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
 
-  const token = signToken(user);
-  res.json({ token, user: publicUser(user) });
+    const token = signToken(user);
+    res.json({ token, user: publicUser(user) });
+  } catch (err) {
+    console.error("Login failed:", err);
+    res.status(500).json({ error: "Login is temporarily unavailable. Please try again." });
+  }
 });
 
 router.get("/me", authRequired, (req, res) => {

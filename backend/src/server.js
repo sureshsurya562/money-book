@@ -18,6 +18,11 @@ const PORT = process.env.PORT || 4000;
 const isProd = process.env.NODE_ENV === "production";
 const frontendDist = path.resolve(__dirname, "../../frontend/dist");
 
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET env var is required");
+  process.exit(1);
+}
+
 app.use(
   cors({
     origin: true,
